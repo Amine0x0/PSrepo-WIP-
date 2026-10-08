@@ -1,12 +1,15 @@
 import { View, StyleSheet, Text, Pressable } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface TopBarProps {
   onRefresh: () => void;
 }
 
 export function TopBar({ onRefresh }: TopBarProps) {
+  const { top } = useSafeAreaInsets();
+
   return (
-    <View style={styles.topBar}>
+    <View style={[styles.topBar, { height: styles.topBar.height + top, paddingTop: styles.topBar.paddingTop + top }]}>
       <View>
         <Text style={styles.kicker}>@lowtix</Text>
         <Text style={styles.title}>PS4Repo</Text>
@@ -15,7 +18,7 @@ export function TopBar({ onRefresh }: TopBarProps) {
       <Pressable 
         style={({ pressed }) => [
           styles.refreshButton,
-          pressed && { backgroundColor: '#262626' }
+          pressed && styles.pressed
         ]} 
         onPress={onRefresh}
       >
@@ -34,8 +37,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2528',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#f2f2f2',
   },
   title: {
     color: '#ededee',
@@ -44,23 +47,26 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
   kicker: {
-    color: '#d35a86',
-    fontSize: 9,
+    color: '#b8b8b8',
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1.4,
-    marginBottom: 3,
+    letterSpacing: 1.8,
+    marginBottom: 5,
   },
   refreshButton: {
-    backgroundColor: '#21191e',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#9f4969',
+    backgroundColor: '#171717',
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#f2f2f2',
   },
   refreshText: {
-    color: '#e09ab5',
+    color: '#f2f2f2',
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  pressed: {
+    backgroundColor: '#303030',
   },
 });
