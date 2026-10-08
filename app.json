@@ -6,9 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "backgroundColor": "#0b0b0c"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -37,6 +34,13 @@
           "android": {
             "usesCleartextTraffic": true
           }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0b0b0c",
+          "image": "./assets/splash-icon.png"
         }
       ]
     ]

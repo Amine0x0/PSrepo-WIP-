@@ -9,6 +9,7 @@ web-build/
 # Native builds
 ios/
 android/
+.gradle-cache/
 
 # Metro
 .metro-health-check*
