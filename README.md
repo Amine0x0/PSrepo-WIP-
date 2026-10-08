@@ -1,4 +1,4 @@
-# PSrepo 🎮
+# PSrepo
 
 > ** Current Status:** *[Remote Package Installer](https://github.com/flatz/ps4_remote_pkg_installer) currently lacks support for parsing HTTPS requests.* A fix is in the works, and local fork updates will follow.
 
