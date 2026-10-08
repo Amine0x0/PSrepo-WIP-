@@ -37,19 +37,19 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#000000',
+    backgroundColor: '#0b0b0c',
     flexDirection: 'row',
     alignItems: 'center',
   },
   input: {
     flex: 1,
     height: 42,
-    backgroundColor: '#121212',
+    backgroundColor: '#121214',
     borderWidth: 1,
-    borderColor: '#262626',
+    borderColor: '#30272c',
     borderRadius: 8,
     paddingHorizontal: 14,
-    color: '#ededed',
+    color: '#ededee',
     fontSize: 14,
   },
   clearButton: {
