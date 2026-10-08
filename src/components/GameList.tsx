@@ -46,16 +46,20 @@ export function GameList({ searchQuery, refreshTrigger, sortMode, onSortChange, 
             return data.files
             .filter((file: any) => file?.name && file.name.toLowerCase().endsWith('.pkg'))
               .map((file: any, index: number) => {
-                const filePath = file.dir && file.dir !== '/' ? `${file.dir}/${file.name}` : file.name;
-                
-                const exactUrl = `https://archive.org/download/${identifier}/${filePath}`;
+                const pathSegments = [
+                  ...(file.dir && file.dir !== '/' ? file.dir.split('/').filter(Boolean) : []),
+                  file.name,
+                ];
+                const exactUrl = `https://archive.org/download/${identifier}/${pathSegments
+                  .map((segment: string) => encodeURIComponent(segment))
+                  .join('/')}`;
 
                 return {
                   id: `bucket-${letter}-${index}-${file.name}`,
                   name: file.name,
                   size: file.size ? formatSize(Number(file.size)) : 'Unknown size',
                   sizeBytes: Number(file.size) || 0,
-                  downloadUrl: encodeURI(exactUrl),
+                  downloadUrl: exactUrl,
                   artworkUrl: '',
                 };
               });

@@ -7,6 +7,7 @@ import json
 import logging
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+from urllib.parse import unquote
 
 
 HOST = "0.0.0.0"
@@ -45,37 +46,78 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self._send_json(404, {"error": "Not found"})
 
+    def validate_install(payload):
+        t = payload.get("type")
+        if t == "direct":
+            pk = payload.get("packages")
+            if pk is None:
+                return "No 'packages' parameter specified."
+            if not isinstance(pk, list):
+                return "Invalid type for parameter 'packages'."
+            for p in pk:
+                if not isinstance(p, str):
+                    return "Invalid type for element of parameter 'packages'."
+                if not p:
+                    return "Empty element value of parameter 'packages'."
+                if not unquote(p).startswith(("http://", "https://")):
+                    return "Unexpected element value of parameter 'packages'."
+            if not pk:
+                return "No packages."
+        elif t == "ref_pkg_url":
+            u = payload.get("url")
+            if not isinstance(u, str) or not unquote(u).startswith(("http://", "https://")):
+                return "Unexpected element value of parameter 'url'."
+        else:
+            return f"Invalid type '{t}'."
+        return None
+
     def do_POST(self) -> None:
         self._log_request()
-
-        if self.path != "/api/install":
-            self._send_json(404, {"error": "Not found"})
-            return
 
         content_length = self.headers.get("Content-Length")
         try:
             body = self.rfile.read(int(content_length or 0))
             payload = json.loads(body) if body else {}
         except (ValueError, json.JSONDecodeError) as error:
-            logger.warning("Invalid JSON install request: %s", error)
+            logger.warning("Invalid JSON request: %s", error)
             self._send_json(400, {"error": "Request body must be valid JSON."})
+            return
+
+        if self.path == "/api/is_exists":
+            if not isinstance(payload.get("title_id"), str):
+                self._send_json(400, {"error": "title_id is required."})
+                return
+            self._send_json(
+                200,
+                {
+                    "status": "success",
+                    "exists": False,
+                },
+            )
+            return
+
+        if self.path != "/api/install":
+            self._send_json(404, {"error": "Not found"})
             return
 
         logger.info("Install payload: %s", json.dumps(payload, indent=2))
         packages = payload.get("packages")
-        if payload.get("type") != "direct" or not isinstance(packages, list):
+        is_direct = payload.get("type") == "direct" and isinstance(packages, list)
+        is_manifest = payload.get("type") == "ref_pkg_url" and isinstance(payload.get("url"), str)
+        if not (is_direct or is_manifest):
             self._send_json(
                 400,
-                {"error": 'Expected {"type": "direct", "packages": [...]}.'},
+                {"error": "Expected a direct packages array or ref_pkg_url manifest."},
             )
             return
 
         self._send_json(
             200,
             {
-                "accepted": True,
-                "packages": len(packages),
-                "message": "Package install request received by test server.",
+                "status": "success",
+                "task_id": 1,
+                "packages": len(packages) if is_direct else 1,
+                "title": "Test package",
             },
         )
 

@@ -7,10 +7,20 @@ interface InstallerTargetProps {
   onChange: (target: Ps4Target) => void;
   onTest: () => Promise<void>;
   testing: boolean;
+  onInstallUrl: (url: string) => Promise<void>;
+  installingUrl: boolean;
 }
 
-export function InstallerTarget({ target, onChange, onTest, testing }: InstallerTargetProps) {
+export function InstallerTarget({
+  target,
+  onChange,
+  onTest,
+  testing,
+  onInstallUrl,
+  installingUrl,
+}: InstallerTargetProps) {
   const [expanded, setExpanded] = useState(false);
+  const [url, setUrl] = useState('');
 
   return (
     <View style={styles.container}>
@@ -26,6 +36,7 @@ export function InstallerTarget({ target, onChange, onTest, testing }: Installer
         <View style={styles.editor}>
           <Text style={styles.help}>
             The PS4 must be on the same network with Remote PKG Installer running.
+            The title lookup requires a real CUSA ID; it is not a connectivity test.
           </Text>
           <View style={styles.inputs}>
             <TextInput
@@ -47,12 +58,40 @@ export function InstallerTarget({ target, onChange, onTest, testing }: Installer
               keyboardType="number-pad"
             />
           </View>
+          <TextInput
+            style={styles.titleIdInput}
+            value={target.titleId}
+            onChangeText={(titleId) => onChange({ ...target, titleId: titleId.toUpperCase() })}
+            placeholder="CUSA title ID for installed-title lookup"
+            placeholderTextColor="#525252"
+            autoCapitalize="characters"
+            autoCorrect={false}
+          />
           <Pressable
             style={({ pressed }) => [styles.testButton, pressed && styles.pressed]}
             onPress={onTest}
             disabled={testing}
           >
-            <Text style={styles.testText}>{testing ? 'Checking...' : 'Test PS4 connection'}</Text>
+            <Text style={styles.testText}>{testing ? 'Looking up...' : 'Check installed title'}</Text>
+          </Pressable>
+          <TextInput
+            style={styles.urlInput}
+            value={url}
+            onChangeText={setUrl}
+            placeholder="Package (.pkg) or manifest (.json) URL"
+            placeholderTextColor="#525252"
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+          />
+          <Pressable
+            style={({ pressed }) => [styles.installButton, pressed && styles.pressed]}
+            onPress={() => void onInstallUrl(url)}
+            disabled={installingUrl || !url.trim()}
+          >
+            <Text style={styles.installText}>
+              {installingUrl ? 'Sending...' : 'Install from URL'}
+            </Text>
           </Pressable>
         </View>
       )}
@@ -75,6 +114,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f2f2f2',
     paddingHorizontal: 20,
     paddingVertical: 16,
+  },
+  titleIdInput: {
+    backgroundColor: '#121214',
+    borderColor: '#f2f2f2',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    color: '#ededee',
+    height: 48,
+    marginTop: 14,
+    paddingHorizontal: 14,
   },
   header: {
     alignItems: 'center',
@@ -141,5 +190,27 @@ const styles = StyleSheet.create({
     color: '#f2f2f2',
     fontSize: 12,
     fontWeight: '600',
+  },
+  urlInput: {
+    backgroundColor: '#121214',
+    borderColor: '#f2f2f2',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    color: '#ededee',
+    height: 48,
+    marginTop: 14,
+    paddingHorizontal: 14,
+  },
+  installButton: {
+    alignItems: 'center',
+    backgroundColor: '#f2f2f2',
+    borderRadius: 10,
+    marginTop: 10,
+    paddingVertical: 13,
+  },
+  installText: {
+    color: '#111112',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

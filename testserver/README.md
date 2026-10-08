@@ -19,9 +19,10 @@ network.
 
 ## Supported endpoints
 
-- `GET /api/is_exists` returns HTTP 200 so the app's connection test succeeds.
-- `POST /api/install` logs and validates the JSON install request, then returns
-  HTTP 200.
+- `POST /api/is_exists` accepts the documented JSON `title_id` payload and
+  returns a title lookup response.
+- `POST /api/install` logs and validates both direct package and manifest
+  install requests, then returns HTTP 200.
 - `OPTIONS` responds to browser CORS preflight requests.
 
 The server allows requests from any origin and permits `GET`, `POST`, and
