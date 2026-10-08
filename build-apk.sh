@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# for local developpement , i don't use it that much.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
