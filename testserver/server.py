@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Small local stand-in for the PS4 Remote PKG Installer server."""
-
 from __future__ import annotations
 
 import json

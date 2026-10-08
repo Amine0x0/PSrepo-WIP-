@@ -34,8 +34,6 @@ export function getPs4BaseUrl(target: Ps4Target): string {
 export async function sendPackageToPs4(target: Ps4Target, packageUrl: string): Promise<void> {
   const installUrl = packageUrl.trim();
   const packageUri = parseInstallUrl(installUrl);
-  // The PS4 installer validates the URL after one URI decode. Send the URL
-  // itself rather than encoding the whole URL as a second layer.
   const normalizedUrl = packageUri.toString();
   const isManifest = packageUri.pathname.toLowerCase().endsWith('.json');
   const request: InstallRequest = isManifest
@@ -47,7 +45,6 @@ export async function sendPackageToPs4(target: Ps4Target, packageUrl: string): P
     {
       method: 'POST',
       headers: {
-        // Match curl --data used by the released PS4 installer examples.
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: JSON.stringify(request),
