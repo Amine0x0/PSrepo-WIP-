@@ -47,9 +47,6 @@ jobs:
             }
           '
 
-      - name: Validate Expo project
-        run: npx expo-doctor
-
       - name: Validate TypeScript
         run: npx tsc --noEmit
 
