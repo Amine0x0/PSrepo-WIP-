@@ -118,8 +118,9 @@ Expo project is already linked through the `extra.eas.projectId` value in
 ## GitHub Release automation
 
 The workflow at `.github/workflows/android-release.yml` builds the `preview`
-APK with EAS and attaches it to a GitHub Release whenever a tag matching
-`v*` is pushed.
+APK with EAS and uploads it as a workflow artifact (`PSrepo-android-apk`) on
+every run. For tag pushes matching `v*`, it also publishes the APK to a GitHub
+Release.
 
 Repository setup:
 
@@ -134,8 +135,10 @@ Repository setup:
    ```
 
 4. Wait for the **Build Android APK and release it** workflow to finish.
-5. Download the APK from the generated GitHub Release and install it on
-   Android. Android may require enabling installation from that source.
+5. Download the APK from:
+   - the `PSrepo-android-apk` workflow artifact (all runs), or
+   - the generated GitHub Release asset (tag-triggered runs).
+   Android may require enabling installation from that source.
 
 The workflow uses the built-in GitHub Actions token to create the release and
 does not require a second GitHub token. EAS signing credentials are managed by
