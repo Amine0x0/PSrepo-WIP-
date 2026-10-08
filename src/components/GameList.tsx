@@ -197,8 +197,11 @@ async function findCatalogImage(packageName: string): Promise<string | undefined
 function normalizeTitle(value: string): string {
   return value
     .replace(/\.[^.]+$/, '')
+    .replace(/\[[^\]]*]/g, ' ')
     .replace(/[_-]+/g, ' ')
     .replace(/\b(?:CUSA|PPSA|PCJS|PLJS)\d{4,}\b/gi, '')
+    .replace(/\bv?\d+(?:\.\d+)+\b/gi, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();

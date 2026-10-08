@@ -8,8 +8,8 @@ export function TopBar({ onRefresh }: TopBarProps) {
   return (
     <View style={styles.topBar}>
       <View>
-        <Text style={styles.kicker}>PS4 / REMOTE REPOSITORY</Text>
-        <Text style={styles.title}>PKG // LINK</Text>
+        <Text style={styles.kicker}>@lowtix</Text>
+        <Text style={styles.title}>PS4Repo</Text>
       </View>
       
       <Pressable 
@@ -19,7 +19,7 @@ export function TopBar({ onRefresh }: TopBarProps) {
         ]} 
         onPress={onRefresh}
       >
-        <Text style={styles.refreshText}>Sync</Text>
+        <Text style={styles.refreshText}>Refresh</Text>
       </Pressable>
     </View>
   );
