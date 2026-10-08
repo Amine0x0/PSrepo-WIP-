@@ -23,11 +23,30 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22.13.1
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Verify preview profile builds an APK
+        run: |
+          node -e '
+            const fs = require("fs");
+            const eas = JSON.parse(fs.readFileSync("eas.json", "utf8"));
+            const buildType = eas?.build?.preview?.android?.buildType;
+            if (buildType !== "apk") {
+              console.error("eas.json build.preview.android.buildType must be \"apk\".");
+              process.exit(1);
+            }
+          '
+
+      - name: Validate Expo project
+        run: npx expo-doctor
 
       - name: Validate TypeScript
         run: npx tsc --noEmit
@@ -45,28 +64,116 @@ jobs:
             --wait \
             --json > eas-build.json
 
-      - name: Download APK
+      - name: Locate and download APK
         run: |
-          build_url="$(node -e '
-            const fs = require("fs");
-            const value = JSON.parse(fs.readFileSync("eas-build.json", "utf8"));
-            const build = Array.isArray(value) ? value[0] : value;
-            const url = build?.artifacts?.buildUrl || build?.artifactUrl;
-            if (!url) process.exit(1);
-            process.stdout.write(url);
-          ')"
-          curl --fail --location --retry 3 "$build_url" --output PSrepo.apk
+          set -euo pipefail
+
+          npx eas-cli@latest build:list \
+            --platform android \
+            --status finished \
+            --limit 20 \
+            --non-interactive \
+            --json > eas-build-list.json
+
+          node <<'NODE'
+          const fs = require("fs");
+
+          const sha = (process.env.GITHUB_SHA || "").toLowerCase();
+
+          function readJson(path) {
+            try {
+              return JSON.parse(fs.readFileSync(path, "utf8"));
+            } catch {
+              return null;
+            }
+          }
+
+          function asArray(value) {
+            if (!value) return [];
+            return Array.isArray(value) ? value : [value];
+          }
+
+          function getString(value) {
+            return typeof value === "string" ? value : "";
+          }
+
+          function getBuildUrl(build) {
+            const candidates = [
+              build?.artifacts?.buildUrl,
+              build?.artifacts?.applicationArchiveUrl,
+              build?.artifactUrl,
+              build?.applicationArchiveUrl,
+            ].filter((v) => typeof v === "string" && /^https?:\/\//.test(v));
+
+            return candidates.find((url) => /\.apk(\?|$)/i.test(url)) || candidates[0] || null;
+          }
+
+          function getCommit(build) {
+            return getString(build?.gitCommitHash || build?.commitHash || build?.vcsCommitHash).toLowerCase();
+          }
+
+          function getPlatform(build) {
+            return getString(build?.platform).toLowerCase();
+          }
+
+          function getProfile(build) {
+            return getString(build?.buildProfile || build?.profile).toLowerCase();
+          }
+
+          const primaryBuilds = asArray(readJson("eas-build.json"));
+          const listedBuilds = asArray(readJson("eas-build-list.json"));
+          const allBuilds = [...primaryBuilds, ...listedBuilds];
+
+          const buildCandidates = allBuilds
+            .filter((build) => build && typeof build === "object")
+            .filter((build) => {
+              const platform = getPlatform(build);
+              return platform === "android" || platform === "";
+            })
+            .filter((build) => {
+              const profile = getProfile(build);
+              return profile === "preview" || profile === "";
+            })
+            .filter((build) => getBuildUrl(build));
+
+          const matchingSha = sha
+            ? buildCandidates.filter((build) => getCommit(build) === sha)
+            : [];
+
+          const selectedBuild = matchingSha[0] || buildCandidates[0];
+          const selectedUrl = selectedBuild ? getBuildUrl(selectedBuild) : null;
+
+          if (!selectedUrl) {
+            console.error("Unable to locate an APK build URL from EAS CLI output.");
+            process.exit(1);
+          }
+
+          fs.writeFileSync("apk-url.txt", `${selectedUrl}\n`);
+          NODE
+
+          curl --fail --location --retry 3 "$(cat apk-url.txt)" --output PSrepo.apk
+          unzip -tq PSrepo.apk > /dev/null
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PSrepo-android-apk
+          path: PSrepo.apk
+          if-no-files-found: error
 
       - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            release_tag="$GITHUB_REF_NAME"
+          release_tag="$GITHUB_REF_NAME"
+          if gh release view "$release_tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$release_tag" PSrepo.apk \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
           else
-            release_tag="android-${GITHUB_RUN_NUMBER}"
+            gh release create "$release_tag" PSrepo.apk \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "PSrepo $release_tag" \
+              --generate-notes
           fi
-          gh release create "$release_tag" PSrepo.apk \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "PSrepo $release_tag" \
-            --generate-notes
