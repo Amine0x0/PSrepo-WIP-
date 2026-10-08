@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TopBar } from './src/components/TopBar';
 import { SearchBar } from './src/components/SearchBar';
 import { GameList, GameItem, SortMode } from './src/components/GameList';
@@ -50,24 +51,26 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <TopBar onRefresh={handleRefresh} />
-      <InstallerTarget
-        target={ps4Target}
-        onChange={setPs4Target}
-        onTest={testConnection}
-        testing={testingConnection}
-      />
-      <SearchBar value={searchQuery} onChangeQuery={setSearchQuery} />
-      <GameList 
-        searchQuery={searchQuery} 
-        refreshTrigger={refreshTrigger} 
-        sortMode={sortMode}
-        onSortChange={setSortMode}
-        onSelectGame={handleSelectGame} 
-      />
-      <StatusBar style="light" />
-    </View>
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        <TopBar onRefresh={handleRefresh} />
+        <InstallerTarget
+          target={ps4Target}
+          onChange={setPs4Target}
+          onTest={testConnection}
+          testing={testingConnection}
+        />
+        <SearchBar value={searchQuery} onChangeQuery={setSearchQuery} />
+        <GameList
+          searchQuery={searchQuery}
+          refreshTrigger={refreshTrigger}
+          sortMode={sortMode}
+          onSortChange={setSortMode}
+          onSelectGame={handleSelectGame}
+        />
+        <StatusBar style="light" />
+      </View>
+    </SafeAreaProvider>
   );
 }
 

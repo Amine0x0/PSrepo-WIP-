@@ -148,6 +148,7 @@ export function GameList({ searchQuery, refreshTrigger, sortMode, onSortChange, 
 
 function GameArtwork({ name }: { name: string }) {
   const [imageUrl, setImageUrl] = useState<string>();
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -158,9 +159,25 @@ function GameArtwork({ name }: { name: string }) {
     return () => { active = false; };
   }, [name]);
 
-  return imageUrl
-    ? <Image source={{ uri: imageUrl }} style={styles.artwork} resizeMode="cover" />
-    : <View style={[styles.artwork, styles.artworkPlaceholder]}><Text style={styles.placeholderText}>NO ARTWORK</Text></View>;
+  if (imageUrl && !imageFailed) {
+    return (
+      <Image
+        source={{ uri: imageUrl }}
+        style={styles.artwork}
+        resizeMode="cover"
+        onError={() => setImageFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <Image
+      source={require('../../assets/placeholder-cover.png')}
+      style={styles.artwork}
+      resizeMode="cover"
+      accessibilityLabel="Placeholder cover artwork"
+    />
+  );
 }
 
 async function findCatalogImage(packageName: string): Promise<string | undefined> {
@@ -216,31 +233,29 @@ function formatSize(bytes: number): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0b0b0c' },
-  contentContainer: { padding: 16, paddingTop: 8 },
-  columnWrapper: { justifyContent: 'space-between' },
+  contentContainer: { padding: 20, paddingTop: 10, paddingBottom: 28 },
+  columnWrapper: { justifyContent: 'space-between', gap: 12 },
   center: { flex: 1, backgroundColor: '#0b0b0c', justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: '#8d8d92', fontSize: 13, marginTop: 10 },
-  listHeader: { marginBottom: 16 },
-  sectionHeader: { color: '#d35a86', fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
-  resultCount: { color: '#8d8d92', fontSize: 11, marginTop: 4 },
-  sortControl: { flexDirection: 'row', marginTop: 12, gap: 6 },
-  sortOption: { borderColor: '#30272c', borderRadius: 6, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 6 },
-  sortOptionActive: { backgroundColor: '#241820', borderColor: '#d35a86' },
-  sortText: { color: '#8d8d92', fontSize: 10, fontWeight: '700' },
-  sortTextActive: { color: '#e9a0bb' },
+  listHeader: { marginBottom: 22 },
+  sectionHeader: { color: '#f2f2f2', fontSize: 12, fontWeight: '800', letterSpacing: 1.8 },
+  resultCount: { color: '#9a9a9f', fontSize: 12, marginTop: 7 },
+  sortControl: { flexDirection: 'row', marginTop: 16, gap: 8 },
+  sortOption: { borderColor: '#f2f2f2', borderRadius: 8, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 9 },
+  sortOptionActive: { backgroundColor: '#2a2a2a', borderColor: '#ffffff' },
+  sortText: { color: '#b0b0b5', fontSize: 11, fontWeight: '700' },
+  sortTextActive: { color: '#ffffff' },
   card: { 
     width: '48%', 
     backgroundColor: '#121214', 
-    padding: 14, 
-    borderRadius: 10, 
-    borderWidth: 1, 
-    borderColor: '#30272c', 
-    marginBottom: 12, 
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#f2f2f2',
+    marginBottom: 16,
     justifyContent: 'space-between' 
   },
-  artwork: { backgroundColor: '#211b20', borderRadius: 6, height: 92, marginBottom: 12, width: '100%' },
-  artworkPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  placeholderText: { color: '#6f686d', fontSize: 9, fontWeight: '700', letterSpacing: 1 },
-  cardTitle: { color: '#e8e8eb', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  cardSubtext: { color: '#8d8d92', fontSize: 11 },
+  artwork: { backgroundColor: '#242424', borderRadius: 8, height: 112, marginBottom: 16, width: '100%' },
+  cardTitle: { color: '#f2f2f2', fontSize: 14, fontWeight: '700', lineHeight: 19, marginBottom: 10 },
+  cardSubtext: { color: '#a7a7ad', fontSize: 12 },
 });
