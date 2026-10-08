@@ -35,7 +35,9 @@ export async function sendPackageToPs4(target: Ps4Target, packageUrl: string): P
   const response = await fetch(`${getPs4BaseUrl(target)}/api/install`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      // Remote Package Installer's API examples use curl's default form
+      // content type, even though the request body itself is JSON.
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: JSON.stringify({
       type: 'direct',
