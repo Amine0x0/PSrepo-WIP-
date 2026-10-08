@@ -16,7 +16,9 @@ Installer.
    `NO ARTWORK`.
 4. The **PS4 Remote PKG Installer** section accepts a PS4 hostname/IP and port
    (default `12800`).
-5. **Test PS4 connection** sends `GET /api/is_exists`.
+5. **Check installed title** sends `POST /api/is_exists` with a real JSON
+   `title_id` field. The cloned PS4 source confirms this endpoint is a title
+   lookup, not a generic connectivity check.
 6. Tapping a game sends the Archive.org package URL with
    `POST /api/install`:
 
@@ -26,9 +28,13 @@ Installer.
      "packages": ["https://archive.org/download/.../game.pkg"]
    }
    ```
+7. A custom URL can be entered in the PS4 installer section. `.pkg` URLs use
+   the `direct` request type; `.json` manifest URLs use `ref_pkg_url`, as
+   supported by Remote Package Installer.
 
-7. A successful request means the install was queued by the PS4 service; it
-   does not mean the package has finished installing.
+8. The PS4 source downloads and inspects the package before returning from
+   `/api/install`; a successful response includes a task ID. The response
+   still does not mean the package has finished installing.
 
 ## Is it fully functional?
 
@@ -40,7 +46,8 @@ setup:
 - Remote PKG Installer must be running on the PS4 and listening on the
   configured port.
 - The PS4 must be able to download the Archive.org URL itself.
-- A package must be publicly reachable and end in `.pkg`.
+- A package or manifest must be publicly reachable; direct package URLs end in
+  `.pkg` and manifest URLs end in `.json`.
 
 The app reports HTTP failures from the PS4 and validates the host, port, URL
 scheme, and `.pkg` extension. It does not monitor download/install progress,
@@ -64,11 +71,16 @@ package installation.
 1. Install and open the PSrepo APK.
 2. Expand **PS4 Remote PKG Installer**.
 3. Enter the PS4 local IP address and port.
-4. Tap **Test PS4 connection** and wait for the success message.
+4. To check an installed title, enter its real CUSA ID and tap **Check
+   installed title**. This is a title lookup, not a generic connection test.
 5. Search or sort the package list.
 6. Tap the desired package card once.
-7. Wait for **Install queued**.
-8. Monitor the Remote PKG Installer/PS4 side for download and installation
+7. To install another URL, expand **PS4 Remote PKG Installer**, paste a
+   public `.pkg` URL or a Remote Package Installer manifest `.json` URL, and
+   tap **Install from URL**.
+8. Wait for **Install queued**. The PS4 may take time to inspect the package
+   before returning this response.
+9. Monitor the Remote PKG Installer/PS4 side for download and installation
    progress. Keep both devices connected to the network until it completes.
 
 If the test fails, check the IP address, port, Wi-Fi/VLAN isolation, firewall

@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-
+ps4_remote_pkg_installer/
 # Expo
 .expo/
 dist/
