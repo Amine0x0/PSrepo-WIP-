@@ -7,7 +7,10 @@ interface TopBarProps {
 export function TopBar({ onRefresh }: TopBarProps) {
   return (
     <View style={styles.topBar}>
-      <Text style={styles.title}>@TBONMK</Text>
+      <View>
+        <Text style={styles.kicker}>PS4 / REMOTE REPOSITORY</Text>
+        <Text style={styles.title}>PKG // LINK</Text>
+      </View>
       
       <Pressable 
         style={({ pressed }) => [
@@ -25,31 +28,38 @@ export function TopBar({ onRefresh }: TopBarProps) {
 const styles = StyleSheet.create({
   topBar: {
     height: 64,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#111112',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#262626',
+    borderBottomColor: '#2a2528',
   },
   title: {
-    color: '#ededed',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.2,
+    color: '#ededee',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  kicker: {
+    color: '#d35a86',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    marginBottom: 3,
   },
   refreshButton: {
-    backgroundColor: '#171717',
+    backgroundColor: '#21191e',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#333333',
+    borderColor: '#9f4969',
   },
   refreshText: {
-    color: '#a3a3a3',
+    color: '#e09ab5',
     fontSize: 13,
     fontWeight: '500',
   },

@@ -1,22 +1,35 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, Text, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { View, StyleSheet, Text, FlatList, ActivityIndicator, Pressable, Image } from 'react-native';
 
 export interface GameItem {
   id: string;
   name: string;
   size: string;
+  sizeBytes: number;
   downloadUrl: string;
+  artworkUrl: string;
 }
 
 interface GameListProps {
   searchQuery: string;
   refreshTrigger: number;
+  sortMode: SortMode;
+  onSortChange: (sortMode: SortMode) => void;
   onSelectGame: (game: GameItem) => void;
 }
 
-const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+export type SortMode = 'name' | 'largest' | 'smallest';
 
-export function GameList({ searchQuery, refreshTrigger, onSelectGame }: GameListProps) {
+const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+const catalogRequests = new Map<string, Promise<CatalogEntry[]>>();
+
+interface CatalogEntry {
+  name?: string;
+  image?: string;
+  uuid?: string;
+}
+
+export function GameList({ searchQuery, refreshTrigger, sortMode, onSortChange, onSelectGame }: GameListProps) {
   const [games, setGames] = useState<GameItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,9 +44,7 @@ export function GameList({ searchQuery, refreshTrigger, onSelectGame }: GameList
 
           if (data?.files) {
             return data.files
-              .filter((file: any) => 
-                file?.name && (file.name.endsWith('.pkg') || file.name.endsWith('.zip') || file.name.endsWith('.rar'))
-              )
+            .filter((file: any) => file?.name && file.name.toLowerCase().endsWith('.pkg'))
               .map((file: any, index: number) => {
                 const filePath = file.dir && file.dir !== '/' ? `${file.dir}/${file.name}` : file.name;
                 
@@ -42,8 +53,10 @@ export function GameList({ searchQuery, refreshTrigger, onSelectGame }: GameList
                 return {
                   id: `bucket-${letter}-${index}-${file.name}`,
                   name: file.name,
-                  size: file.size ? (file.size / (1024 * 1024 * 1024)).toFixed(2) + ' GB' : 'Unknown size',
+                  size: file.size ? formatSize(Number(file.size)) : 'Unknown size',
+                  sizeBytes: Number(file.size) || 0,
                   downloadUrl: encodeURI(exactUrl),
+                  artworkUrl: '',
                 };
               });
           }
@@ -65,9 +78,13 @@ export function GameList({ searchQuery, refreshTrigger, onSelectGame }: GameList
     fetchAllBuckets();
   }, [refreshTrigger, fetchAllBuckets]);
 
-  const filteredGames = games.filter((game) =>
-    game.name.toLowerCase().includes((searchQuery || '').toLowerCase())
-  );
+  const filteredGames = games
+    .filter((game) => game.name.toLowerCase().includes((searchQuery || '').toLowerCase()))
+    .sort((a, b) => {
+      if (sortMode === 'largest') return b.sizeBytes - a.sizeBytes;
+      if (sortMode === 'smallest') return a.sizeBytes - b.sizeBytes;
+      return a.name.localeCompare(b.name);
+    });
 
   if (loading) {
     return (
@@ -87,9 +104,29 @@ export function GameList({ searchQuery, refreshTrigger, onSelectGame }: GameList
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.contentContainer}
         ListHeaderComponent={
-          <Text style={styles.sectionHeader}>
-            Archive Index ({filteredGames.length} / {games.length} items)
-          </Text>
+          <View>
+            <View style={styles.listHeader}>
+              <View>
+                <Text style={styles.sectionHeader}>ARCHIVE INDEX</Text>
+                <Text style={styles.resultCount}>{filteredGames.length} of {games.length} packages</Text>
+              </View>
+              <View style={styles.sortControl}>
+                {([
+                  ['name', 'A-Z'],
+                  ['largest', 'Largest'],
+                  ['smallest', 'Smallest'],
+                ] as [SortMode, string][]).map(([value, label]) => (
+                  <Pressable
+                    key={value}
+                    style={[styles.sortOption, sortMode === value && styles.sortOptionActive]}
+                    onPress={() => onSortChange(value)}
+                  >
+                    <Text style={[styles.sortText, sortMode === value && styles.sortTextActive]}>{label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
         }
         renderItem={({ item }) => (
           <Pressable 
@@ -99,6 +136,7 @@ export function GameList({ searchQuery, refreshTrigger, onSelectGame }: GameList
             ]}
             onPress={() => onSelectGame(item)}
           >
+            <GameArtwork name={item.name} />
             <Text style={styles.cardTitle} numberOfLines={2}>{item.name}</Text>
             <Text style={styles.cardSubtext}>{item.size}</Text>
           </Pressable>
@@ -108,23 +146,98 @@ export function GameList({ searchQuery, refreshTrigger, onSelectGame }: GameList
   );
 }
 
+function GameArtwork({ name }: { name: string }) {
+  const [imageUrl, setImageUrl] = useState<string>();
+
+  useEffect(() => {
+    let active = true;
+    findCatalogImage(name).then((url) => {
+      if (active) setImageUrl(url);
+    });
+
+    return () => { active = false; };
+  }, [name]);
+
+  return imageUrl
+    ? <Image source={{ uri: imageUrl }} style={styles.artwork} resizeMode="cover" />
+    : <View style={[styles.artwork, styles.artworkPlaceholder]}><Text style={styles.placeholderText}>NO ARTWORK</Text></View>;
+}
+
+async function findCatalogImage(packageName: string): Promise<string | undefined> {
+  const packageId = packageName.match(/\b(?:CUSA|PPSA|PCJS|PLJS)\d{4,}\b/i)?.[0]?.toUpperCase();
+  const title = normalizeTitle(packageName);
+  const firstLetter = title[0]?.toLowerCase();
+  if (!firstLetter || !LETTERS.includes(firstLetter)) return undefined;
+
+  let request = catalogRequests.get(firstLetter);
+  if (!request) {
+    request = fetch(`https://raw.githubusercontent.com/Ephellon/game-store-catalog/main/ps4/${firstLetter}.json`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Catalog request failed with HTTP ${response.status}.`);
+        return response.json() as Promise<CatalogEntry[]>;
+      });
+    catalogRequests.set(firstLetter, request);
+  }
+
+  try {
+    const entries = await request;
+    const idMatch = packageId ? entries.find((entry) => entry.uuid?.toUpperCase().includes(packageId)) : undefined;
+    if (idMatch?.image) return idMatch.image;
+
+    const titleMatch = entries.find((entry) => {
+      return Boolean(entry.name && normalizeTitle(entry.name) === title && entry.image);
+    });
+    return titleMatch?.image;
+  } catch (error) {
+    console.warn('Unable to load PlayStation artwork catalog:', error);
+    return undefined;
+  }
+}
+
+function normalizeTitle(value: string): string {
+  return value
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b(?:CUSA|PPSA|PCJS|PLJS)\d{4,}\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function formatSize(bytes: number): string {
+  if (!bytes) return 'Unknown size';
+  return bytes >= 1024 ** 3
+    ? `${(bytes / 1024 ** 3).toFixed(2)} GB`
+    : `${(bytes / 1024 ** 2).toFixed(0)} MB`;
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
-  contentContainer: { padding: 16 },
+  container: { flex: 1, backgroundColor: '#0b0b0c' },
+  contentContainer: { padding: 16, paddingTop: 8 },
   columnWrapper: { justifyContent: 'space-between' },
-  center: { flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#737373', fontSize: 13, marginTop: 10 },
-  sectionHeader: { color: '#525252', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 14 },
+  center: { flex: 1, backgroundColor: '#0b0b0c', justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: '#8d8d92', fontSize: 13, marginTop: 10 },
+  listHeader: { marginBottom: 16 },
+  sectionHeader: { color: '#d35a86', fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
+  resultCount: { color: '#8d8d92', fontSize: 11, marginTop: 4 },
+  sortControl: { flexDirection: 'row', marginTop: 12, gap: 6 },
+  sortOption: { borderColor: '#30272c', borderRadius: 6, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 6 },
+  sortOptionActive: { backgroundColor: '#241820', borderColor: '#d35a86' },
+  sortText: { color: '#8d8d92', fontSize: 10, fontWeight: '700' },
+  sortTextActive: { color: '#e9a0bb' },
   card: { 
     width: '48%', 
-    backgroundColor: '#0f0f0f', 
+    backgroundColor: '#121214', 
     padding: 14, 
     borderRadius: 10, 
     borderWidth: 1, 
-    borderColor: '#222222', 
+    borderColor: '#30272c', 
     marginBottom: 12, 
     justifyContent: 'space-between' 
   },
-  cardTitle: { color: '#ededed', fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  cardSubtext: { color: '#737373', fontSize: 11 },
+  artwork: { backgroundColor: '#211b20', borderRadius: 6, height: 92, marginBottom: 12, width: '100%' },
+  artworkPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  placeholderText: { color: '#6f686d', fontSize: 9, fontWeight: '700', letterSpacing: 1 },
+  cardTitle: { color: '#e8e8eb', fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  cardSubtext: { color: '#8d8d92', fontSize: 11 },
 });
