@@ -94,7 +94,7 @@ export function GameList({ searchQuery, refreshTrigger, sortMode, onSortChange, 
     return (
       <View style={styles.center}>
         <ActivityIndicator size="small" color="#ededed" />
-        <Text style={styles.loadingText}>Syncing archive buckets...</Text>
+        <Text style={styles.loadingText}>Loading games...</Text>
       </View>
     );
   }
@@ -111,8 +111,8 @@ export function GameList({ searchQuery, refreshTrigger, sortMode, onSortChange, 
           <View>
             <View style={styles.listHeader}>
               <View>
-                <Text style={styles.sectionHeader}>ARCHIVE INDEX</Text>
-                <Text style={styles.resultCount}>{filteredGames.length} of {games.length} packages</Text>
+                <Text style={styles.sectionHeader}>Games</Text>
+                <Text style={styles.resultCount}>{filteredGames.length} games</Text>
               </View>
               <View style={styles.sortControl}>
                 {([
@@ -236,30 +236,30 @@ function formatSize(bytes: number): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0b0b0c' },
+  container: { flex: 1, backgroundColor: '#0c1217' },
   contentContainer: { padding: 20, paddingTop: 10, paddingBottom: 28 },
   columnWrapper: { justifyContent: 'space-between', gap: 12 },
-  center: { flex: 1, backgroundColor: '#0b0b0c', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#8d8d92', fontSize: 13, marginTop: 10 },
-  listHeader: { marginBottom: 22 },
-  sectionHeader: { color: '#f2f2f2', fontSize: 12, fontWeight: '800', letterSpacing: 1.8 },
-  resultCount: { color: '#9a9a9f', fontSize: 12, marginTop: 7 },
+  center: { flex: 1, backgroundColor: '#0c1217', justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: '#91a7a5', fontSize: 13, marginTop: 10 },
+  listHeader: { marginBottom: 18 },
+  sectionHeader: { color: '#e6f0ed', fontSize: 17, fontWeight: '700' },
+  resultCount: { color: '#91a7a5', fontSize: 12, marginTop: 5 },
   sortControl: { flexDirection: 'row', marginTop: 16, gap: 8 },
-  sortOption: { borderColor: '#f2f2f2', borderRadius: 8, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 9 },
-  sortOptionActive: { backgroundColor: '#2a2a2a', borderColor: '#ffffff' },
-  sortText: { color: '#b0b0b5', fontSize: 11, fontWeight: '700' },
-  sortTextActive: { color: '#ffffff' },
+  sortOption: { backgroundColor: '#121d23', borderColor: '#2a4148', borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 9 },
+  sortOptionActive: { backgroundColor: '#21443f', borderColor: '#76b9a7' },
+  sortText: { color: '#91a7a5', fontSize: 11, fontWeight: '700' },
+  sortTextActive: { color: '#d7f1e8' },
   card: { 
     width: '48%', 
-    backgroundColor: '#121214', 
-    padding: 16,
+    backgroundColor: '#121d23',
+    padding: 12,
     borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#f2f2f2',
+    borderWidth: 1,
+    borderColor: '#263b43',
     marginBottom: 16,
     justifyContent: 'space-between' 
   },
-  artwork: { backgroundColor: '#242424', borderRadius: 8, height: 112, marginBottom: 16, width: '100%' },
-  cardTitle: { color: '#f2f2f2', fontSize: 14, fontWeight: '700', lineHeight: 19, marginBottom: 10 },
-  cardSubtext: { color: '#a7a7ad', fontSize: 12 },
+  artwork: { backgroundColor: '#1b2a30', borderRadius: 7, height: 112, marginBottom: 12, width: '100%' },
+  cardTitle: { color: '#e6f0ed', fontSize: 14, fontWeight: '700', lineHeight: 19, marginBottom: 8 },
+  cardSubtext: { color: '#91a7a5', fontSize: 12 },
 });

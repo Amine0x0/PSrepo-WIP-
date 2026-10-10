@@ -14,9 +14,7 @@ export default function App() {
   const [ps4Target, setPs4Target] = useState<Ps4Target>({
     host: '',
     port: '12800',
-    titleId: 'CUSA01116',
   });
-  const [testingConnection, setTestingConnection] = useState(false);
   const [installingUrl, setInstallingUrl] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('name');
 
@@ -31,8 +29,8 @@ export default function App() {
   const sendPackage = async (game: GameItem) => {
     setInstallingUrl(true);
     try {
-      await sendPackageToPs4(ps4Target, game.downloadUrl);
-      Alert.alert('Install queued', `${game.name} was sent to ${getPs4BaseUrl(ps4Target)}.`);
+      const response = await sendPackageToPs4(ps4Target, game.downloadUrl);
+      Alert.alert('PS4 response', `${game.name} was sent to ${getPs4BaseUrl(ps4Target)}.\n\n${formatPs4Response(response)}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to contact the PS4.';
       Alert.alert('Install request failed', message);
@@ -44,54 +42,13 @@ export default function App() {
   const installUrl = async (url: string) => {
     setInstallingUrl(true);
     try {
-      await sendPackageToPs4(ps4Target, url);
-      Alert.alert('Install queued', 'The PS4 accepted the install request.');
+      const response = await sendPackageToPs4(ps4Target, url);
+      Alert.alert('PS4 response', formatPs4Response(response));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to contact the PS4.';
       Alert.alert('Install request failed', message);
     } finally {
       setInstallingUrl(false);
-    }
-  };
-
-  const testConnection = async () => {
-    setTestingConnection(true);
-    try {
-      const titleId = ps4Target.titleId.trim().toUpperCase();
-      if (!/^CUSA\d{5}$/.test(titleId)) {
-        throw new Error('Enter a real CUSA title ID before checking whether that game is installed.');
-      }
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15_000);
-      let response: Response;
-      try {
-        response = await fetch(`${getPs4BaseUrl(ps4Target)}/api/is_exists`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: JSON.stringify({ title_id: titleId }),
-          signal: controller.signal,
-        });
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          throw new Error('The PS4 did not respond within 15 seconds.');
-        }
-        throw error;
-      } finally {
-        clearTimeout(timeout);
-      }
-      if (!response.ok) {
-        throw new Error(`PS4 returned HTTP ${response.status}.`);
-      }
-      const result = (await response.json()) as { exists?: boolean; size?: number };
-      Alert.alert(
-        'Title lookup complete',
-        result.exists ? `${titleId} is installed on the PS4.` : `${titleId} is not installed on the PS4.`,
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to contact the PS4.';
-      Alert.alert('Connection failed', `${message}\n\nCheck the IP, port, Wi-Fi network, and that Remote PKG Installer is running.`);
-    } finally {
-      setTestingConnection(false);
     }
   };
 
@@ -102,8 +59,6 @@ export default function App() {
         <InstallerTarget
           target={ps4Target}
           onChange={setPs4Target}
-          onTest={testConnection}
-          testing={testingConnection}
           onInstallUrl={installUrl}
           installingUrl={installingUrl}
         />
@@ -119,6 +74,11 @@ export default function App() {
       </View>
     </SafeAreaProvider>
   );
+}
+
+function formatPs4Response(response: { status: number; statusText: string; body: string }): string {
+  const status = `${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
+  return `HTTP ${status}\n${response.body || '[empty response body]'}`;
 }
 
 const styles = StyleSheet.create({

@@ -10,10 +10,7 @@ export function TopBar({ onRefresh }: TopBarProps) {
 
   return (
     <View style={[styles.topBar, { height: styles.topBar.height + top, paddingTop: styles.topBar.paddingTop + top }]}>
-      <View>
-        <Text style={styles.kicker}>@lowtix</Text>
-        <Text style={styles.title}>PS4Repo</Text>
-      </View>
+      <Text style={styles.title}>PS4Repo</Text>
       
       <Pressable 
         style={({ pressed }) => [
@@ -31,42 +28,33 @@ export function TopBar({ onRefresh }: TopBarProps) {
 const styles = StyleSheet.create({
   topBar: {
     height: 64,
-    backgroundColor: '#111112',
+    backgroundColor: '#0c1217',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 12,
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#f2f2f2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#203039',
   },
   title: {
-    color: '#ededee',
-    fontSize: 18,
+    color: '#e6f0ed',
+    fontSize: 20,
     fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  kicker: {
-    color: '#b8b8b8',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.8,
-    marginBottom: 5,
+    letterSpacing: 0.4,
   },
   refreshButton: {
-    backgroundColor: '#171717',
-    paddingVertical: 9,
-    paddingHorizontal: 16,
+    backgroundColor: '#16252c',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#f2f2f2',
   },
   refreshText: {
-    color: '#f2f2f2',
+    color: '#9ed9c9',
     fontSize: 13,
     fontWeight: '600',
   },
   pressed: {
-    backgroundColor: '#303030',
+    backgroundColor: '#213740',
   },
 });
