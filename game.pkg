@@ -1,1 +1,1 @@
-{"message":"Cannot GET /download\\?url\\=https://archive.org/download/ps4-fpkg-collection-english-n/Nidhogg%202%20-%20%5BUS%5D%20%5BEN%5D%20%5B1.07%5D.pkg","error":"Not Found","statusCode":404}
+{"message":"Cannot GET /download\\?url\\=https%3A%2F%2Farchive.org%2Fdownload%2Fps4-fpkg-collection-english-n%2FNidhogg%25202%2520-%2520%255BUS%255D%2520%255BEN%255D%2520%255B1.07%255D.pkg","error":"Not Found","statusCode":404}

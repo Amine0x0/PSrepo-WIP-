@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ps4Target, getPs4BaseUrl } from '../installer';
 
 interface InstallerTargetProps {
   target: Ps4Target;
   onChange: (target: Ps4Target) => void;
-  onTest: () => Promise<void>;
-  testing: boolean;
   onInstallUrl: (url: string) => Promise<void>;
   installingUrl: boolean;
 }
@@ -14,30 +13,37 @@ interface InstallerTargetProps {
 export function InstallerTarget({
   target,
   onChange,
-  onTest,
-  testing,
   onInstallUrl,
   installingUrl,
 }: InstallerTargetProps) {
   const [expanded, setExpanded] = useState(false);
   const [url, setUrl] = useState('');
+  const { bottom } = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
-      <Pressable style={styles.header} onPress={() => setExpanded((value) => !value)}>
+    <View
+      style={[
+        styles.container,
+        expanded ? styles.expandedContainer : styles.collapsedContainer,
+        { bottom: expanded ? 0 : bottom + 16 },
+      ]}
+    >
+      {!expanded ? (
+        <Pressable style={({ pressed }) => [styles.configureButton, pressed && styles.pressed]} onPress={() => setExpanded(true)}>
+          <Text style={styles.configureText}>PS4 setup</Text>
+        </Pressable>
+      ) : (
         <View>
-          <Text style={styles.label}>PS4 REMOTE PKG INSTALLER</Text>
-          <Text style={styles.endpoint}>{getEndpointLabel(target)}</Text>
-        </View>
-        <Text style={styles.toggle}>{expanded ? 'Hide' : 'Configure'}</Text>
-      </Pressable>
-
-      {expanded && (
-        <View style={styles.editor}>
-          <Text style={styles.help}>
-            The PS4 must be on the same network with Remote PKG Installer running.
-            The title lookup requires a real CUSA ID; it is not a connectivity test.
-          </Text>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.label}>PS4 CONNECTION</Text>
+              <Text style={styles.endpoint}>{getEndpointLabel(target)}</Text>
+            </View>
+            <Pressable onPress={() => setExpanded(false)} hitSlop={12}>
+              <Text style={styles.close}>Done</Text>
+            </Pressable>
+          </View>
+          <View style={styles.editor}>
           <View style={styles.inputs}>
             <TextInput
               style={[styles.input, styles.hostInput]}
@@ -59,22 +65,6 @@ export function InstallerTarget({
             />
           </View>
           <TextInput
-            style={styles.titleIdInput}
-            value={target.titleId}
-            onChangeText={(titleId) => onChange({ ...target, titleId: titleId.toUpperCase() })}
-            placeholder="CUSA title ID for installed-title lookup"
-            placeholderTextColor="#525252"
-            autoCapitalize="characters"
-            autoCorrect={false}
-          />
-          <Pressable
-            style={({ pressed }) => [styles.testButton, pressed && styles.pressed]}
-            onPress={onTest}
-            disabled={testing}
-          >
-            <Text style={styles.testText}>{testing ? 'Looking up...' : 'Check installed title'}</Text>
-          </Pressable>
-          <TextInput
             style={styles.urlInput}
             value={url}
             onChangeText={setUrl}
@@ -93,6 +83,7 @@ export function InstallerTarget({
               {installingUrl ? 'Sending...' : 'Install from URL'}
             </Text>
           </Pressable>
+          </View>
         </View>
       )}
     </View>
@@ -109,21 +100,46 @@ function getEndpointLabel(target: Ps4Target): string {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#111112',
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#f2f2f2',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    position: 'absolute',
+    zIndex: 10,
   },
-  titleIdInput: {
-    backgroundColor: '#121214',
-    borderColor: '#f2f2f2',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    color: '#ededee',
-    height: 48,
-    marginTop: 14,
-    paddingHorizontal: 14,
+  collapsedContainer: {
+    right: 16,
+    width: 112,
+    borderRadius: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+  },
+  expandedContainer: {
+    left: 16,
+    right: 16,
+    backgroundColor: '#142127',
+    borderColor: '#2a4148',
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+  },
+  configureButton: {
+    alignItems: 'center',
+    backgroundColor: '#21443f',
+    borderColor: '#76b9a7',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  configureText: {
+    color: '#d7f1e8',
+    fontSize: 14,
+    fontWeight: '700',
   },
   header: {
     alignItems: 'center',
@@ -131,40 +147,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   label: {
-    color: '#f2f2f2',
+    color: '#d7f1e8',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.3,
   },
   endpoint: {
-    color: '#ededee',
+    color: '#91a7a5',
     fontSize: 12,
     marginTop: 4,
   },
-  toggle: {
-    color: '#f2f2f2',
+  close: {
+    color: '#9ed9c9',
     fontSize: 12,
     fontWeight: '600',
   },
   editor: {
     marginTop: 16,
   },
-  help: {
-    color: '#737373',
-    fontSize: 12,
-    lineHeight: 17,
-    marginBottom: 14,
-  },
   inputs: {
     flexDirection: 'row',
     gap: 10,
   },
   input: {
-    backgroundColor: '#121214',
-    borderColor: '#f2f2f2',
+    backgroundColor: '#0f1a20',
+    borderColor: '#2a4148',
     borderRadius: 10,
-    borderWidth: 1.5,
-    color: '#ededee',
+    borderWidth: 1,
+    color: '#e6f0ed',
     height: 48,
     paddingHorizontal: 14,
   },
@@ -174,42 +184,28 @@ const styles = StyleSheet.create({
   portInput: {
     width: 96,
   },
-  testButton: {
-    alignItems: 'center',
-    backgroundColor: '#171717',
-    borderColor: '#f2f2f2',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    marginTop: 14,
-    paddingVertical: 13,
-  },
   pressed: {
     opacity: 0.7,
   },
-  testText: {
-    color: '#f2f2f2',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   urlInput: {
-    backgroundColor: '#121214',
-    borderColor: '#f2f2f2',
+    backgroundColor: '#0f1a20',
+    borderColor: '#2a4148',
     borderRadius: 10,
-    borderWidth: 1.5,
-    color: '#ededee',
+    borderWidth: 1,
+    color: '#e6f0ed',
     height: 48,
     marginTop: 14,
     paddingHorizontal: 14,
   },
   installButton: {
     alignItems: 'center',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#9ed9c9',
     borderRadius: 10,
     marginTop: 10,
     paddingVertical: 13,
   },
   installText: {
-    color: '#111112',
+    color: '#10201f',
     fontSize: 12,
     fontWeight: '700',
   },
