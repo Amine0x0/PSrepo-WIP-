@@ -15,6 +15,7 @@ export interface Ps4Target {
 }
 
 const INSTALL_REQUEST_TIMEOUT_MS = 90_000;
+const DOWNLOAD_PROXY_URL = 'http://20.79.187.102/download';
 
 export function getPs4BaseUrl(target: Ps4Target): string {
   const host = target.host.trim();
@@ -35,10 +36,11 @@ export async function sendPackageToPs4(target: Ps4Target, packageUrl: string): P
   const installUrl = packageUrl.trim();
   const packageUri = parseInstallUrl(installUrl);
   const normalizedUrl = packageUri.toString();
+  const proxiedUrl = getDownloadProxyUrl(normalizedUrl);
   const isManifest = packageUri.pathname.toLowerCase().endsWith('.json');
   const request: InstallRequest = isManifest
-    ? { type: 'ref_pkg_url', url: normalizedUrl }
-    : { type: 'direct', packages: [normalizedUrl] };
+    ? { type: 'ref_pkg_url', url: proxiedUrl }
+    : { type: 'direct', packages: [proxiedUrl] };
 
   const response = await fetchWithTimeout(
     `${getPs4BaseUrl(target)}/api/install`,
@@ -70,6 +72,10 @@ export async function sendPackageToPs4(target: Ps4Target, packageUrl: string): P
       }
     }
   }
+}
+
+export function getDownloadProxyUrl(packageUrl: string): string {
+  return `${DOWNLOAD_PROXY_URL}?url=${encodeURIComponent(decodeURI(packageUrl))}`;
 }
 
 async function fetchWithTimeout(
